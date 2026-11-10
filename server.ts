@@ -38,8 +38,12 @@ const PORT = parseInt(process.env.PORT || "3000", 10);
 // SECURITY HEADERS & APP HARDENING
 // ============================================================================
 app.disable("x-powered-by");
-// Disable trust proxy to prevent client-controlled X-Forwarded-For header spoofing
-app.set("trust proxy", false);
+// Trust first proxy hop in production or on Render PaaS (ensures client IP and HTTPS headers work)
+if (process.env.NODE_ENV === "production" || process.env.RENDER) {
+  app.set("trust proxy", 1);
+} else {
+  app.set("trust proxy", false);
+}
 
 // Security Headers: Configured for seamless AI Studio iframe embedding
 app.use(
@@ -51,19 +55,23 @@ app.use(
   })
 );
 
-// Strict CORS Allow-List: Explicit origins only (No google.com wildcards)
+// Strict CORS Allow-List: Explicit origins (including Render deployments)
 const ALLOWED_ORIGIN_PATTERNS = [
   /^https?:\/\/localhost(?::\d+)?$/,
   /^https?:\/\/127\.0\.0\.1(?::\d+)?$/,
   /^https:\/\/ais-(?:dev|pre)-[a-z0-9-]+\.asia-southeast1\.run\.app$/,
   /^https:\/\/aistudio\.google\.com$/,
   /^https:\/\/ai\.google\.dev$/,
+  /^https?:\/\/[a-z0-9-]+\.onrender\.com$/,
+  /^https?:\/\/[a-z0-9-]+\.render\.com$/,
 ];
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   const origin = req.headers.origin;
   if (origin) {
-    const isAllowed = ALLOWED_ORIGIN_PATTERNS.some((pattern) => pattern.test(origin));
+    const host = req.get("host");
+    const isSameHost = Boolean(host && (origin.endsWith(`://${host}`) || origin === `https://${host}` || origin === `http://${host}`));
+    const isAllowed = isSameHost || ALLOWED_ORIGIN_PATTERNS.some((pattern) => pattern.test(origin));
     if (isAllowed) {
       res.header("Access-Control-Allow-Origin", origin);
       res.header("Vary", "Origin");
@@ -210,7 +218,7 @@ const RAW_STAFF_PIN = (process.env.STAFF_PIN || "").trim();
 let ACTIVE_STAFF_PIN = RAW_STAFF_PIN;
 if (!ACTIVE_STAFF_PIN || WEAK_PINS.has(ACTIVE_STAFF_PIN) || ACTIVE_STAFF_PIN.length < 6) {
   ACTIVE_STAFF_PIN = crypto.randomInt(100000, 999999).toString();
-  console.warn("⚠️ Security Notice: Default, weak, or short STAFF_PIN refused. Generated secure 6-digit session PIN.");
+  console.warn("⚠️ Security Notice: Default, weak, or short STAFF_PIN refused. Generated secure 6-digit session PIN: " + ACTIVE_STAFF_PIN);
 }
 
 interface FailedAttemptRecord {
@@ -1403,15 +1411,20 @@ async function startServer() {
 
   if (isProd) {
     if (!fs.existsSync(distPath)) {
-      console.error("FATAL: dist/ directory not found in production mode. Run 'npm run build' before starting.");
-      process.exit(1);
+      console.warn("⚠️ Warning: dist/ directory not found in production mode. Initializing on-demand Vite middlewares.");
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+    } else {
+      console.log("Serving production build from dist/");
+      app.use(express.static(distPath));
+      app.get("*", (req: Request, res: Response, next: NextFunction) => {
+        if (req.path.startsWith("/api")) return next();
+        res.sendFile(path.join(distPath, "index.html"));
+      });
     }
-    console.log("Serving production build from dist/");
-    app.use(express.static(distPath));
-    app.get("*", (req: Request, res: Response, next: NextFunction) => {
-      if (req.path.startsWith("/api")) return next();
-      res.sendFile(path.join(distPath, "index.html"));
-    });
   } else {
     const vite = await createViteServer({
       server: { middlewareMode: true },

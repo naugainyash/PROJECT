@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: aarogyavani-voice-receptionist
+    env: node
+    plan: free
+    region: singapore # Closest to India for lowest STT/TTS latency
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GNANI_BASE_URL
+        value: https://api.vachana.ai
+      - key: TTS_MODEL
+        value: timbre-v3.0
+      - key: TTS_VOICE
+        value: Shivani
+      - key: TTS_SPEED
+        value: "1.0"
+      - key: GNANI_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: STAFF_PIN
+        sync: false
