@@ -296,7 +296,7 @@ export const VoiceMic: React.FC<VoiceMicProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             {isTestingMic && (
               <div className="w-24 sm:w-28 h-2 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
                 <div
@@ -314,6 +314,17 @@ export const VoiceMic: React.FC<VoiceMicProps> = ({
               <Volume2 className="w-3.5 h-3.5" aria-hidden="true" />
               <span>{isTestingMic ? "Listening..." : "Test Audio Input"}</span>
             </button>
+            {onOpenPermissions && (
+              <button
+                type="button"
+                onClick={onOpenPermissions}
+                className="px-3 py-1.5 rounded-xl border border-zinc-300 dark:border-[#1E3B40] bg-white dark:bg-[#13262A] text-zinc-700 dark:text-zinc-300 font-semibold text-[11px] hover:bg-zinc-100 dark:hover:bg-[#1E3B40] transition-colors cursor-pointer min-h-[48px] flex items-center justify-center gap-1.5"
+                aria-label="Open Permissions Center"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-[#0F5C63] dark:text-[#5FC1C6]" aria-hidden="true" />
+                <span>Permissions &amp; Access</span>
+              </button>
+            )}
           </div>
         </div>
       )}

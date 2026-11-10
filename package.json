@@ -2,7 +2,7 @@
   "name": "aarogyavani-hospital-voice-bot",
   "private": true,
   "version": "1.0.0",
-  "description": "Multilingual AI Hospital Voice Receptionist built on Gnani AI (Prisma STT & Timbre TTS) and Gemini 2.5 Flash",
+  "description": "Multilingual AI Hospital Voice Receptionist built on Gnani AI (Prisma STT & Timbre TTS)",
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",

@@ -2,12 +2,24 @@ import React from "react";
 import { Zap, ShieldAlert, CheckCircle2, Clock, Languages, PieChart, Info } from "lucide-react";
 import { SampleDataBadge } from "./SampleDataBadge";
 
-interface AnalyticsData {
+export interface LiveQueryRecord {
+  id: string;
+  type: "voice" | "text";
+  query: string;
+  category: string;
+  language: string;
+  isEmergency: boolean;
+  reply_snippet: string;
+  timestamp: string;
+}
+
+export interface AnalyticsData {
   queries_total: number;
   by_language: Record<string, number>;
   by_category: Record<string, number>;
   emergencies: number;
   leads: number;
+  recent_queries?: LiveQueryRecord[];
 }
 
 interface AnalyticsPanelProps {
@@ -183,6 +195,109 @@ export const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ analytics }) => 
           </div>
         </div>
       )}
+
+      {/* Real-time Live Session Query Stream (Voice & Text) */}
+      <div className="bg-white dark:bg-[#13262A] border border-[#D8E3E0] dark:border-[#1E3B40] rounded-3xl p-6 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-zinc-100 dark:border-[#1E3B40]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-teal-100 dark:bg-[#0C1A1C] border border-teal-200 dark:border-[#1E3B40] text-[#0F5C63] dark:text-[#5FC1C6] flex items-center justify-center shrink-0">
+              <Zap className="w-5 h-5" aria-hidden="true" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-base text-zinc-900 dark:text-[#E6F1EF] tracking-tight">
+                  Live Session Query Stream
+                </h3>
+                <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Live Sync (Auto-polls)
+                </span>
+              </div>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                Incoming patient queries from Voice Receptionist &amp; Chat in real time
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+            <span className="font-semibold text-zinc-700 dark:text-zinc-300">Total Stream Records:</span>
+            <span className="font-mono font-bold text-[#0F5C63] dark:text-[#5FC1C6]">
+              {analytics.recent_queries?.length || 0}
+            </span>
+          </div>
+        </div>
+
+        {/* Live Query Items */}
+        {analytics.recent_queries && analytics.recent_queries.length > 0 ? (
+          <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
+            {analytics.recent_queries.map((item) => {
+              const isVoice = item.type === "voice";
+              const isEmerg = item.isEmergency || item.category === "emergency";
+              return (
+                <div
+                  key={item.id}
+                  className={`p-4 rounded-2xl border transition-all text-left ${
+                    isEmerg
+                      ? "bg-rose-50/70 dark:bg-[#1A0B0E] border-rose-200 dark:border-rose-900/60"
+                      : "bg-zinc-50/70 dark:bg-[#0C1A1C] border-zinc-200/80 dark:border-[#1E3B40]"
+                  }`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-md ${
+                          isVoice
+                            ? "bg-teal-100 dark:bg-teal-950/80 text-teal-900 dark:text-[#5FC1C6]"
+                            : "bg-indigo-100 dark:bg-indigo-950/80 text-indigo-900 dark:text-indigo-300"
+                        }`}
+                      >
+                        {isVoice ? "🎙️ Voice Query" : "⌨️ Text Query"}
+                      </span>
+
+                      <span
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-md ${
+                          isEmerg
+                            ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 font-bold"
+                            : "bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                        }`}
+                      >
+                        {categoryLabels[item.category] || item.category}
+                      </span>
+
+                      <span className="text-[10px] text-zinc-500 font-mono">
+                        {languageLabels[item.language] || item.language}
+                      </span>
+                    </div>
+
+                    <span className="text-[10px] text-zinc-600 dark:text-zinc-400 font-mono">
+                      {item.timestamp}
+                    </span>
+                  </div>
+
+                  <p className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-[#E6F1EF] mb-1">
+                    &ldquo;{item.query}&rdquo;
+                  </p>
+
+                  {item.reply_snippet && (
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2 pl-2 border-l-2 border-teal-500 dark:border-[#5FC1C6]">
+                      {item.reply_snippet}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="p-8 rounded-2xl bg-zinc-50 dark:bg-[#0C1A1C] border border-dashed border-zinc-200 dark:border-[#1E3B40] text-center">
+            <p className="text-xs text-zinc-600 dark:text-zinc-400">
+              No live queries captured yet in this session.
+            </p>
+            <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-1">
+              Speak or type a query in the Voice Receptionist tab to watch real-time entries appear here.
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Verified Pipeline Architecture Benchmarks */}
       <div className="bg-teal-50 dark:bg-zinc-900/60 border border-teal-200 dark:border-zinc-800 rounded-2xl p-5 text-xs text-zinc-700 dark:text-zinc-300">

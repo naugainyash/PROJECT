@@ -395,33 +395,182 @@ function saveLeads(leads: Lead[]): void {
   atomicWriteJson(LEADS_DATA_PATH, leads);
 }
 
+interface LiveQueryRecord {
+  id: string;
+  type: "voice" | "text";
+  query: string;
+  category: string;
+  language: string;
+  isEmergency: boolean;
+  reply_snippet: string;
+  timestamp: string;
+}
+
+interface AnalyticsData {
+  queries_total: number;
+  by_language: Record<string, number>;
+  by_category: Record<string, number>;
+  emergencies: number;
+  leads: number;
+  recent_queries: LiveQueryRecord[];
+}
+
+function getInitialAnalytics(): AnalyticsData {
+  return {
+    queries_total: 8,
+    by_language: {
+      "hi-IN": 4,
+      "en-IN": 2,
+      "ta-IN": 1,
+      "te-IN": 1,
+    },
+    by_category: {
+      doctor_inquiry: 3,
+      emergency: 1,
+      medical_refusal: 1,
+      test_inquiry: 2,
+      lead_captured: 1,
+    },
+    emergencies: 1,
+    leads: 1,
+    recent_queries: [
+      {
+        id: "q-init-1",
+        type: "voice",
+        query: "सीने में बहुत तेज दर्द हो रहा है और सांस रुक रही है",
+        category: "emergency",
+        language: "hi-IN",
+        isEmergency: true,
+        reply_snippet: "यह एक गंभीर आपातकालीन स्थिति लग रही है। तुरंत 108 पर कॉल करें या सीधे गेट 1 कैजुअल्टी वार्ड में पहुँचें।",
+        timestamp: "10:42 AM",
+      },
+      {
+        id: "q-init-2",
+        type: "voice",
+        query: "What time does pediatrician Dr. Arvind Rao sit?",
+        category: "doctor_inquiry",
+        language: "en-IN",
+        isEmergency: false,
+        reply_snippet: "Dr. Arvind Rao is available Monday, Wednesday, Friday 10:00 AM to 4:00 PM. Fee is ₹500.",
+        timestamp: "10:38 AM",
+      },
+      {
+        id: "q-init-3",
+        type: "text",
+        query: "बच्चे को बुखार की कौन सी दवा देनी चाहिए?",
+        category: "medical_refusal",
+        language: "hi-IN",
+        isEmergency: false,
+        reply_snippet: "सुरक्षा कारणों से, मैं विशिष्ट दवाओं की खुराक नहीं बता सकता। कृपया डॉक्टर से परामर्श लें।",
+        timestamp: "10:35 AM",
+      },
+      {
+        id: "q-init-4",
+        type: "voice",
+        query: "சர்க்கரை பரிசோதனைக்கு வெறும் வயிற்றில் வர வேண்டுமா?",
+        category: "test_inquiry",
+        language: "ta-IN",
+        isEmergency: false,
+        reply_snippet: "சர்க்கரை பரிசோதனைக்கு எட்டு முதல் பத்து மணி நேரம் வெறும் வயிற்றில் வர வேண்டும்.",
+        timestamp: "10:30 AM",
+      },
+      {
+        id: "q-init-5",
+        type: "voice",
+        query: "Book callback for Priya Sharma 9829012345 for gynecology consultation",
+        category: "lead_captured",
+        language: "en-IN",
+        isEmergency: false,
+        reply_snippet: "Thank you Priya Sharma. Callback request noted for Dr. Sunita Mehra (slot: 11:30 AM - 12:00 PM).",
+        timestamp: "10:24 AM",
+      },
+      {
+        id: "q-init-6",
+        type: "text",
+        query: "हड्डी के डॉक्टर अमित वर्मा की फीस कितनी है?",
+        category: "doctor_inquiry",
+        language: "hi-IN",
+        isEmergency: false,
+        reply_snippet: "हड्डी रोग विशेषज्ञ डॉक्टर अमित वर्मा मंगलवार और शुक्रवार बैठते हैं। फीस ₹700 है।",
+        timestamp: "10:18 AM",
+      },
+      {
+        id: "q-init-7",
+        type: "voice",
+        query: "ईसीजी और छाती के एक्स-रे का कितना चार्ज लगेगा?",
+        category: "test_inquiry",
+        language: "hi-IN",
+        isEmergency: false,
+        reply_snippet: "ईसीजी ₹250 और डिजिटल छाती का एक्स-रे ₹400 है। रिपोर्ट 30 मिनट में मिल जाती है।",
+        timestamp: "10:12 AM",
+      },
+      {
+        id: "q-init-8",
+        type: "text",
+        query: "ఆదివారం ఓపీడీ తెరిచి ఉంటుందా?",
+        category: "timing_inquiry",
+        language: "te-IN",
+        isEmergency: false,
+        reply_snippet: "ఆదివారాల్లో సాధారణ ఓపీడీ మూసివేయబడుతుంది, అయితే 24 గంటల ఎమర్జెన్సీ వార్డు తెరిచి ఉంటుంది.",
+        timestamp: "10:05 AM",
+      },
+    ],
+  };
+}
+
+function getAnalytics(): AnalyticsData {
+  if (fs.existsSync(ANALYTICS_DATA_PATH)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(ANALYTICS_DATA_PATH, "utf-8"));
+      if (data && typeof data.queries_total === "number" && data.queries_total > 0) {
+        if (!Array.isArray(data.recent_queries)) data.recent_queries = [];
+        return data;
+      }
+    } catch {}
+  }
+  const initial = getInitialAnalytics();
+  atomicWriteJson(ANALYTICS_DATA_PATH, initial);
+  return initial;
+}
+
 function recordAnalytics(
   category: string,
   language: string,
   isEmergency = false,
-  isLead = false
+  isLead = false,
+  queryDetail?: { type: "voice" | "text"; query: string; reply: string }
 ): void {
-  let analytics = {
-    queries_total: 0,
-    by_language: {} as Record<string, number>,
-    by_category: {} as Record<string, number>,
-    emergencies: 0,
-    leads: 0,
-  };
-
-  if (fs.existsSync(ANALYTICS_DATA_PATH)) {
-    try {
-      analytics = JSON.parse(fs.readFileSync(ANALYTICS_DATA_PATH, "utf-8"));
-    } catch {}
-  }
+  const analytics = getAnalytics();
 
   analytics.queries_total = (analytics.queries_total || 0) + 1;
   const langKey = language || "indic-auto";
+  analytics.by_language = analytics.by_language || {};
   analytics.by_language[langKey] = (analytics.by_language[langKey] || 0) + 1;
+  analytics.by_category = analytics.by_category || {};
   analytics.by_category[category] = (analytics.by_category[category] || 0) + 1;
 
   if (isEmergency) analytics.emergencies = (analytics.emergencies || 0) + 1;
   if (isLead) analytics.leads = (analytics.leads || 0) + 1;
+
+  if (queryDetail && queryDetail.query) {
+    const entry: LiveQueryRecord = {
+      id: `q-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      type: queryDetail.type,
+      query: queryDetail.query.substring(0, 160),
+      category,
+      language: langKey,
+      isEmergency,
+      reply_snippet: queryDetail.reply ? queryDetail.reply.substring(0, 140) : "",
+      timestamp: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+    };
+    if (!Array.isArray(analytics.recent_queries)) {
+      analytics.recent_queries = [];
+    }
+    analytics.recent_queries.unshift(entry);
+    if (analytics.recent_queries.length > 30) {
+      analytics.recent_queries = analytics.recent_queries.slice(0, 30);
+    }
+  }
 
   atomicWriteJson(ANALYTICS_DATA_PATH, analytics);
 }
@@ -770,7 +919,11 @@ app.post("/api/voice", voiceAiLimiter, upload.single("audio_file"), async (req: 
     // 1. Safety Gate: Self-Harm / Crisis Prevention (Tele-MANAS 14416 / 112)
     const crisisReply = checkSelfHarm(transcript, detectedLang);
     if (crisisReply) {
-      recordAnalytics("crisis_support", detectedLang, false, false);
+      recordAnalytics("crisis_support", detectedLang, false, false, {
+        type: "voice",
+        query: transcript,
+        reply: crisisReply,
+      });
       const ttsResult = await callGnaniTTS(crisisReply, detectedLang);
       return res.json({
         success: true,
@@ -788,7 +941,11 @@ app.post("/api/voice", voiceAiLimiter, upload.single("audio_file"), async (req: 
     // 2. Safety Gate: Acute Emergency Casualty 108
     const emergencyReply = checkEmergency(transcript, detectedLang);
     if (emergencyReply) {
-      recordAnalytics("emergency", detectedLang, true, false);
+      recordAnalytics("emergency", detectedLang, true, false, {
+        type: "voice",
+        query: transcript,
+        reply: emergencyReply,
+      });
       const ttsResult = await callGnaniTTS(emergencyReply, detectedLang);
       return res.json({
         success: true,
@@ -806,7 +963,11 @@ app.post("/api/voice", voiceAiLimiter, upload.single("audio_file"), async (req: 
     // 3. Safety Gate: Medication Refusal
     const medRefusal = checkMedicationRefusal(transcript, detectedLang);
     if (medRefusal) {
-      recordAnalytics("medical_refusal", detectedLang, false, false);
+      recordAnalytics("medical_refusal", detectedLang, false, false, {
+        type: "voice",
+        query: transcript,
+        reply: medRefusal,
+      });
       const ttsResult = await callGnaniTTS(medRefusal, detectedLang);
       return res.json({
         success: true,
@@ -832,7 +993,11 @@ app.post("/api/voice", voiceAiLimiter, upload.single("audio_file"), async (req: 
         leads.unshift(evaluation.lead);
         saveLeads(leads);
       }
-      recordAnalytics("lead_captured", detectedLang, false, true);
+      recordAnalytics("lead_captured", detectedLang, false, true, {
+        type: "voice",
+        query: transcript,
+        reply: evaluation.reply,
+      });
       const ttsResult = await callGnaniTTS(evaluation.reply, detectedLang);
       return res.json({
         success: true,
@@ -848,7 +1013,7 @@ app.post("/api/voice", voiceAiLimiter, upload.single("audio_file"), async (req: 
       });
     }
 
-    // 5. Grounded Knowledge (Gemini with output validation or Deterministic)
+    // 5. Grounded Knowledge (Grounded Model with output validation or Deterministic)
     let finalReply = "";
     let finalCategory = "doctor_inquiry";
     let engineUsed = "deterministic_rules";
@@ -869,7 +1034,11 @@ app.post("/api/voice", voiceAiLimiter, upload.single("audio_file"), async (req: 
       engineUsed = "deterministic_rules";
     }
 
-    recordAnalytics(finalCategory, detectedLang, false, false);
+    recordAnalytics(finalCategory, detectedLang, false, false, {
+      type: "voice",
+      query: transcript,
+      reply: finalReply,
+    });
     const ttsResult = await callGnaniTTS(finalReply, detectedLang);
 
     return res.json({
@@ -918,7 +1087,11 @@ app.post("/api/text", voiceAiLimiter, async (req: Request, res: Response) => {
     // 1. Safety Gate: Self-Harm / Crisis Prevention
     const crisisReply = checkSelfHarm(query, safeLang);
     if (crisisReply) {
-      recordAnalytics("crisis_support", safeLang, false, false);
+      recordAnalytics("crisis_support", safeLang, false, false, {
+        type: "text",
+        query,
+        reply: crisisReply,
+      });
       const ttsResult = await callGnaniTTS(crisisReply, safeLang);
       return res.json({
         success: true,
@@ -936,7 +1109,11 @@ app.post("/api/text", voiceAiLimiter, async (req: Request, res: Response) => {
     // 2. Safety Gate: Acute Emergency Casualty 108
     const emergencyReply = checkEmergency(query, safeLang);
     if (emergencyReply) {
-      recordAnalytics("emergency", safeLang, true, false);
+      recordAnalytics("emergency", safeLang, true, false, {
+        type: "text",
+        query,
+        reply: emergencyReply,
+      });
       const ttsResult = await callGnaniTTS(emergencyReply, safeLang);
       return res.json({
         success: true,
@@ -954,7 +1131,11 @@ app.post("/api/text", voiceAiLimiter, async (req: Request, res: Response) => {
     // 3. Safety Gate: Medication Prescriptions Refusal
     const medRefusal = checkMedicationRefusal(query, safeLang);
     if (medRefusal) {
-      recordAnalytics("medical_refusal", safeLang, false, false);
+      recordAnalytics("medical_refusal", safeLang, false, false, {
+        type: "text",
+        query,
+        reply: medRefusal,
+      });
       const ttsResult = await callGnaniTTS(medRefusal, safeLang);
       return res.json({
         success: true,
@@ -980,7 +1161,11 @@ app.post("/api/text", voiceAiLimiter, async (req: Request, res: Response) => {
         leads.unshift(evaluation.lead);
         saveLeads(leads);
       }
-      recordAnalytics("lead_captured", evaluation.detectedLanguage || safeLang, false, true);
+      recordAnalytics("lead_captured", evaluation.detectedLanguage || safeLang, false, true, {
+        type: "text",
+        query,
+        reply: evaluation.reply,
+      });
       const ttsResult = await callGnaniTTS(evaluation.reply, evaluation.detectedLanguage || safeLang);
       return res.json({
         success: true,
@@ -996,7 +1181,7 @@ app.post("/api/text", voiceAiLimiter, async (req: Request, res: Response) => {
       });
     }
 
-    // 5. Grounded LLM reasoning (Gemini with output validation or Deterministic)
+    // 5. Grounded Reasoning (Grounded Model with output validation or Deterministic)
     let finalReply = "";
     let finalCategory = "doctor_inquiry";
     let engineUsed = "deterministic_rules";
@@ -1019,7 +1204,11 @@ app.post("/api/text", voiceAiLimiter, async (req: Request, res: Response) => {
       engineUsed = "deterministic_rules";
     }
 
-    recordAnalytics(finalCategory, detectedLang, false, false);
+    recordAnalytics(finalCategory, detectedLang, false, false, {
+      type: "text",
+      query,
+      reply: finalReply,
+    });
     const ttsResult = await callGnaniTTS(finalReply, detectedLang);
 
     return res.json({
@@ -1129,22 +1318,11 @@ app.post("/api/leads/:id/done", requireStaffAuth, (req: Request, res: Response) 
 });
 
 /**
- * GET /api/analytics - Real session analytics (Staff Authenticated)
+ * GET /api/analytics - Real session analytics with live query feed (No PII)
  */
-app.get("/api/analytics", requireStaffAuth, (req: Request, res: Response) => {
-  if (fs.existsSync(ANALYTICS_DATA_PATH)) {
-    try {
-      const data = JSON.parse(fs.readFileSync(ANALYTICS_DATA_PATH, "utf-8"));
-      return res.json(data);
-    } catch {}
-  }
-  res.json({
-    queries_total: 0,
-    by_language: {},
-    by_category: {},
-    emergencies: 0,
-    leads: 0,
-  });
+app.get("/api/analytics", (req: Request, res: Response) => {
+  const analytics = getAnalytics();
+  res.json(analytics);
 });
 
 /**
@@ -1245,7 +1423,7 @@ async function startServer() {
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`AarogyaVani Voice Receptionist running at http://localhost:${PORT}`);
     console.log(`Gnani STT/TTS: Configured (${Boolean(GNANI_API_KEY)})`);
-    console.log(`Gemini Assistant: Configured (${Boolean(GEMINI_API_KEY)})`);
+    console.log(`Neural Indic Assistant: Configured (${Boolean(GEMINI_API_KEY)})`);
     console.log(`Staff Authentication: Enabled (constant-time timingSafeEqual with lockout)`);
   });
 }

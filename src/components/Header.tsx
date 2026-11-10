@@ -6,7 +6,6 @@ import {
   ShieldCheck,
   Building2,
   BarChart3,
-  BookOpen,
   Clock,
   Volume2,
   VolumeX,
@@ -18,8 +17,8 @@ import {
 export type DeviceMode = "responsive" | "phone" | "tablet" | "kiosk" | "desktop";
 
 interface HeaderProps {
-  activeTab: "voice" | "reception" | "analytics" | "directory" | "docs";
-  setActiveTab: (tab: "voice" | "reception" | "analytics" | "directory" | "docs") => void;
+  activeTab: "voice" | "reception" | "analytics" | "directory";
+  setActiveTab: (tab: "voice" | "reception" | "analytics" | "directory") => void;
   pendingLeadsCount: number;
   soundEnabled?: boolean;
   onToggleSound?: () => void;
@@ -101,6 +100,20 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Quick utility controls for small screens */}
           <div className="flex items-center gap-1.5 xl:hidden">
+            {onOpenPermissions && (
+              <button
+                type="button"
+                onClick={onOpenPermissions}
+                className="p-2.5 rounded-xl border border-zinc-200 dark:border-[#1E3B40] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-[#13262A] min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer relative"
+                aria-label="Open Access and Permissions Center"
+                title="Manage Microphone, Staff PIN & Audio Permissions"
+              >
+                <ShieldCheck className="w-5 h-5 text-[#0F5C63] dark:text-[#5FC1C6]" aria-hidden="true" />
+                {isStaffAuthenticated && (
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 absolute top-2 right-2 ring-2 ring-white dark:ring-[#0C1A1C]" />
+                )}
+              </button>
+            )}
             <button
               onClick={onToggleDarkMode}
               className="p-2.5 rounded-xl border border-zinc-200 dark:border-[#1E3B40] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-[#13262A] min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
@@ -167,18 +180,6 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Building2 className="w-4 h-4 shrink-0" aria-hidden="true" />
             <span>Doctors &amp; Tests</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("docs")}
-            className={`px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-2 whitespace-nowrap min-h-[48px] cursor-pointer ${
-              activeTab === "docs"
-                ? "bg-teal-700 text-white shadow-sm dark:bg-teal-500 dark:text-[#0C1A1C]"
-                : "text-zinc-700 dark:text-zinc-300 hover:bg-white/60 dark:hover:bg-[#1E3B40]"
-            }`}
-          >
-            <BookOpen className="w-4 h-4 shrink-0" aria-hidden="true" />
-            <span>Hackathon Docs</span>
           </button>
         </nav>
 

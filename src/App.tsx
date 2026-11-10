@@ -6,7 +6,6 @@ import { ConversationList, Message } from "./components/ConversationList";
 import { ReceptionDesk } from "./components/ReceptionDesk";
 import { AnalyticsPanel } from "./components/AnalyticsPanel";
 import { HospitalDirectory } from "./components/HospitalDirectory";
-import { PresentationDocs } from "./components/PresentationDocs";
 import { RateLimitToast } from "./components/RateLimitToast";
 import { EmergencyFrame } from "./components/EmergencyFrame";
 import { PermissionsModal } from "./components/PermissionsModal";
@@ -19,7 +18,7 @@ import defaultHospitalData from "./services/defaultHospitalData";
 import { Mic, MessageSquare, Building2, BarChart3, ShieldCheck } from "lucide-react";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<"voice" | "reception" | "analytics" | "directory" | "docs">("voice");
+  const [activeTab, setActiveTab] = useState<"voice" | "reception" | "analytics" | "directory">("voice");
   const [mobileVoiceSubTab, setMobileVoiceSubTab] = useState<"mic" | "chat">("mic");
   const [botState, setBotState] = useState<MicState>("idle");
   const [audioLevel, setAudioLevel] = useState(0);
@@ -79,12 +78,13 @@ export default function App() {
   ]);
 
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [analytics, setAnalytics] = useState({
+  const [analytics, setAnalytics] = useState<any>({
     queries_total: 0,
-    by_language: {} as Record<string, number>,
-    by_category: {} as Record<string, number>,
+    by_language: {},
+    by_category: {},
     emergencies: 0,
     leads: 0,
+    recent_queries: [],
   });
 
   const [hospitalData, setHospitalData] = useState<any>(defaultHospitalData);
@@ -767,11 +767,6 @@ export default function App() {
     }
   };
 
-  const handleRunTestCase = (query: string) => {
-    setActiveTab("voice");
-    handleSendTypedQuery(query);
-  };
-
   const pendingLeadsCount = leads.filter((l) => l.status === "pending").length;
 
   // Fluid responsive container that dynamically readjusts to any screen size
@@ -949,11 +944,6 @@ export default function App() {
               handleSendTypedQuery(`What is the fee and fasting preparation for ${name}?`);
             }}
           />
-        )}
-
-        {/* Screen 6: Hackathon Documentation & Live Benchmarks */}
-        {activeTab === "docs" && (
-          <PresentationDocs onRunTestCase={handleRunTestCase} />
         )}
       </main>
 
