@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --color-primary: #0F5C63;
+    --color-primary-hover: #0B464B;
+    --color-canvas: #EEF3F1;
+    --color-card-light: #FFFFFF;
+    --color-card-border: #D8E3E0;
+    --color-amber-listen: #F2B01E;
+    --color-emergency: #DC2626;
+    --color-text-main: #142E2B;
+    --color-text-muted: #3D615B;
+
+    --color-dark-bg: #0C1A1C;
+    --color-dark-card: #13262A;
+    --color-dark-border: #1E3B40;
+    --color-dark-primary: #5FC1C6;
+    --color-dark-text: #E6F1EF;
+  }
+
+  body {
+    font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Indic Script Typography with 1.6 Line Height to prevent matra/vowel ligature clipping */
+.font-devanagari {
+  font-family: "Mukta", "Noto Sans Devanagari", system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+.font-tamil {
+  font-family: "Noto Sans Tamil", system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+.font-telugu {
+  font-family: "Noto Sans Telugu", system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+.font-bengali {
+  font-family: "Noto Sans Bengali", system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+.font-kannada {
+  font-family: "Noto Sans Kannada", system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+/* Dual Dark Mode: System Preference Fallback when no explicit theme class is set */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --color-canvas: var(--color-dark-bg);
+    --color-card-light: var(--color-dark-card);
+    --color-text-main: var(--color-dark-text);
+  }
+}
+
+/* Reduced Motion Compliance */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

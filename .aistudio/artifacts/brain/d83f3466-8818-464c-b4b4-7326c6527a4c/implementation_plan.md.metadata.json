@@ -1,0 +1,6 @@
+{
+  "summary": "Revised implementation plan incorporating all user additions: CSS tokens, dual dark mode (.dark and prefers-color-scheme), prefers-reduced-motion rules in index.css; VoiceMic.tsx with 144px button, real audio levels, aria-live status text, top-right language chip, and preserved transcript; dedicated Emergency frame in #DC2626 with large Call 108 button; 4 feedback components (demo banner, sample-data badges, 429 toast, mic-blocked card); Reception desk with PIN entry, kiosk touch numpad, and inactivity timeout clear; backend audit hardening; and test suite expansion including automated accessibility and screenshot checks alongside the 29 unit tests.",
+  "updatedAt": "2026-11-05T16:10:42.725884823Z",
+  "requestFeedback": true,
+  "userFacing": true
+}

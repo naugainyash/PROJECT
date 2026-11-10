@@ -1,0 +1,6 @@
+{
+  "name": "AarogyaVani - Hospital Voice Receptionist",
+  "description": "Multilingual AI voice receptionist for Indian hospitals built on Gnani AI (Prisma STT & Timbre TTS) with emergency triage, lead capture, and reception dashboard.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

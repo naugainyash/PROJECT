@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AarogyaVani - Hospital Voice Receptionist (Gnani AI)</title>
+    <meta name="description" content="Multilingual AI voice receptionist for Indian hospitals built on Gnani AI (Prisma STT &amp; Timbre TTS) with emergency triage, lead capture, and reception dashboard." />
+    <meta property="og:title" content="AarogyaVani - Hospital Voice Receptionist (Gnani AI)" />
+    <meta property="og:description" content="Multilingual AI voice receptionist for Indian hospitals built on Gnani AI (Prisma STT &amp; Timbre TTS) with emergency triage, lead capture, and reception dashboard." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Kannada:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Sans+Telugu:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script>
+      (function() {
+        // 1. Intercept and suppress external Chrome extension errors (e.g. Urban VPN chrome-extension://...)
+        // Capturing phase listener runs before any window.onerror handler or bubbling listeners
+        if (typeof window !== 'undefined') {
+          window.addEventListener('error', function(event) {
+            try {
+              var msg = (event && (event.message || (event.error && event.error.message))) || '';
+              var filename = (event && (event.filename || (event.error && event.error.stack))) || '';
+              if (
+                filename.indexOf('chrome-extension://') !== -1 ||
+                filename.indexOf('moz-extension://') !== -1 ||
+                msg.indexOf('Cannot set property fetch') !== -1 ||
+                msg.indexOf('only a getter') !== -1
+              ) {
+                if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+                if (event.preventDefault) event.preventDefault();
+                return true;
+              }
+            } catch (e) {}
+          }, true);
+
+          window.addEventListener('unhandledrejection', function(event) {
+            try {
+              var reason = event && event.reason;
+              var stack = (reason && reason.stack) || String(reason || '');
+              if (
+                stack.indexOf('chrome-extension://') !== -1 ||
+                stack.indexOf('moz-extension://') !== -1 ||
+                stack.indexOf('Cannot set property fetch') !== -1
+              ) {
+                if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+                if (event.preventDefault) event.preventDefault();
+              }
+            } catch (e) {}
+          }, true);
+
+          // 2. Wrap window.fetch safely with setter support if permitted
+          try {
+            var _rawFetch = window.fetch;
+            if (typeof _rawFetch === 'function') {
+              try {
+                Object.defineProperty(window, 'fetch', {
+                  get: function() { return _rawFetch; },
+                  set: function(v) { _rawFetch = v; },
+                  configurable: true,
+                  enumerable: true
+                });
+              } catch (e1) {
+                try {
+                  Object.defineProperty(window, 'fetch', {
+                    value: _rawFetch,
+                    writable: true,
+                    configurable: true,
+                    enumerable: true
+                  });
+                } catch (e2) {}
+              }
+            }
+          } catch (e) {}
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
